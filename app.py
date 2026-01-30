@@ -28,12 +28,13 @@ def github_webhook():
         }
 
     # PULL REQUEST EVENT
+    # PULL REQUEST EVENT
     elif event_type == "pull_request":
         action = payload.get("action")
+        pr = payload.get("pull_request", {})
 
-        # Only care when PR is opened
+        # PULL REQUEST CREATED
         if action == "opened":
-            pr = payload.get("pull_request", {})
             clean_event = {
                 "author": pr.get("user", {}).get("login"),
                 "action": "pull_request",
@@ -41,6 +42,18 @@ def github_webhook():
                 "to_branch": pr.get("base", {}).get("ref"),
                 "timestamp": pr.get("created_at")
             }
+
+        # MERGE EVENT (PR closed & merged)
+        elif action == "closed" and pr.get("merged") is True:
+            clean_event = {
+                "author": pr.get("merged_by", {}).get("login"),
+                "action": "merge",
+                "from_branch": pr.get("head", {}).get("ref"),
+                "to_branch": pr.get("base", {}).get("ref"),
+                "timestamp": pr.get("merged_at")
+            }
+
+
 
     if clean_event:
         print("\nCLEAN EVENT DATA:",clean_event)
